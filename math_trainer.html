@@ -257,6 +257,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
   }
   .key:active { background: #333; }
   .key.action {
@@ -641,7 +644,17 @@
 
     document.getElementById('go-home').addEventListener('click', goHome);
     app.querySelectorAll('.key').forEach(k => {
+      // Use touchstart for instant response on mobile, click as fallback for desktop.
+      // Track per-key fired state to prevent double-firing from the synthesized click.
+      let touched = false;
+      k.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        touched = true;
+        const v = e.currentTarget.dataset.k;
+        onKey(v);
+      }, { passive: false });
       k.addEventListener('click', (e) => {
+        if (touched) { touched = false; return; }
         const v = e.currentTarget.dataset.k;
         onKey(v);
       });
@@ -765,15 +778,9 @@
     render();
   }
 
-  // Prevent double-tap zoom & pull-to-refresh interference
+  // Prevent pinch-zoom (but allow rapid tapping; double-tap-zoom is handled per-element via CSS touch-action)
   document.addEventListener('touchmove', (e) => {
     if (e.touches.length > 1) e.preventDefault();
-  }, { passive: false });
-  let lastTouch = 0;
-  document.addEventListener('touchend', (e) => {
-    const now = Date.now();
-    if (now - lastTouch < 300) e.preventDefault();
-    lastTouch = now;
   }, { passive: false });
 
   // Kick off

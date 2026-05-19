@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>Mental Math Trainer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    background: #0a0a0a;
+    color: #f5f5f5;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  #app {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  button {
+    font-family: inherit;
+    border: none;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: inherit;
+  }
+
+  /* HOME SCREEN */
+  .home {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px;
+    overflow-y: auto;
+  }
+  .home h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+  .home .sub {
+    color: #888;
+    font-size: 15px;
+    margin-bottom: 28px;
+  }
+  .mode-btn {
+    background: #1a1a1a;
+    border: 1px solid #262626;
+    border-radius: 14px;
+    padding: 18px 18px;
+    text-align: left;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: background 0.1s ease;
+    width: 100%;
+  }
+  .mode-btn:active { background: #242424; }
+  .mode-btn .title {
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .mode-btn .desc {
+    font-size: 13px;
+    color: #888;
+    line-height: 1.35;
+  }
+  .timer-row {
+    margin-top: 20px;
+    margin-bottom: 8px;
+  }
+  .timer-row .label {
+    font-size: 13px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .timer-options {
+    display: flex;
+    gap: 8px;
+  }
+  .timer-opt {
+    flex: 1;
+    padding: 14px 0;
+    background: #1a1a1a;
+    border: 1px solid #262626;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #888;
+  }
+  .timer-opt.active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: white;
+  }
+
+  /* PLAY SCREEN */
+  .play {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 12px;
+    border-bottom: 1px solid #1a1a1a;
+  }
+  .home-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .home-btn:active { background: #262626; }
+  .home-btn svg { width: 20px; height: 20px; stroke: #f5f5f5; }
+  .stats {
+    flex: 1;
+    display: flex;
+    justify-content: space-around;
+    font-size: 13px;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .stat .label {
+    color: #888;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .stat .value {
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .value.streak { color: #f59e0b; }
+  .stat .value.score { color: #10b981; }
+
+  .timer-bar {
+    height: 4px;
+    background: #1a1a1a;
+    position: relative;
+  }
+  .timer-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: #2563eb;
+    transition: background-color 0.2s;
+  }
+  .timer-fill.warning { background: #f59e0b; }
+  .timer-fill.danger { background: #ef4444; }
+
+  .problem-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    min-height: 0;
+  }
+  .problem {
+    font-size: 44px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 20px;
+  }
+  .problem .small {
+    font-size: 22px;
+    color: #888;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .answer-display {
+    font-size: 36px;
+    font-weight: 600;
+    min-height: 50px;
+    padding: 10px 24px;
+    border-radius: 12px;
+    background: #1a1a1a;
+    min-width: 140px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    border: 2px solid transparent;
+    color: #f5f5f5;
+  }
+  .answer-display.correct {
+    background: #064e3b;
+    border-color: #10b981;
+    color: #6ee7b7;
+  }
+  .answer-display.wrong {
+    background: #4c0519;
+    border-color: #ef4444;
+    color: #fda4af;
+  }
+  .answer-display .placeholder { color: #444; }
+  .feedback {
+    margin-top: 16px;
+    font-size: 15px;
+    min-height: 22px;
+    text-align: center;
+    color: #888;
+  }
+  .feedback.correct { color: #10b981; }
+  .feedback.wrong { color: #ef4444; }
+
+  /* KEYPAD */
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 10px 12px 16px;
+    background: #0a0a0a;
+  }
+  .key {
+    height: 60px;
+    background: #1a1a1a;
+    border: 1px solid #262626;
+    border-radius: 14px;
+    font-size: 26px;
+    font-weight: 500;
+    color: #f5f5f5;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .key:active { background: #333; }
+  .key.action {
+    background: #1f2937;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .key.action:active { background: #374151; }
+  .key.submit {
+    background: #2563eb;
+    color: white;
+    grid-column: span 1;
+  }
+  .key.submit:active { background: #1d4ed8; }
+  .key.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  @media (max-height: 700px) {
+    .problem { font-size: 36px; }
+    .answer-display { font-size: 30px; }
+    .key { height: 52px; font-size: 24px; }
+  }
+  @media (max-height: 600px) {
+    .problem { font-size: 30px; }
+    .key { height: 46px; font-size: 22px; }
+    .home { padding: 16px; }
+    .mode-btn { padding: 14px; margin-bottom: 8px; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============ STATE ============
+  const state = {
+    screen: 'home',
+    mode: null,
+    timeLimit: 10,
+    score: 0,
+    streak: 0,
+    bestStreak: 0,
+    current: null,
+    input: '',
+    feedback: null,
+    timerStart: 0,
+    timerHandle: null,
+    locked: false,
+  };
+
+  // ============ UTILITIES ============
+  function rint(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+  function gcd(a, b) {
+    a = Math.abs(a); b = Math.abs(b);
+    while (b) { [a, b] = [b, a % b]; }
+    return a;
+  }
+  function fmtFraction(n, d) {
+    const g = gcd(n, d);
+    const sn = n / g, sd = d / g;
+    if (sd === 1) return String(sn);
+    return sn + '/' + sd;
+  }
+  function fmtNum(n) {
+    return n.toLocaleString('en-US');
+  }
+
+  // ============ MODES ============
+  const MODES = {
+    times: {
+      title: 'Times Tables (Hard Pairs)',
+      desc: 'Combinations of 6, 7, 8, 9. The ones that actually slow you down.',
+      generate() {
+        const a = pick([6,7,8,9]);
+        const b = pick([6,7,8,9]);
+        return {
+          display: `${a} \u00D7 ${b}`,
+          answer: a * b,
+          check: (input) => parseInt(input, 10) === a * b,
+          exact: String(a * b),
+          inputType: 'int',
+        };
+      }
+    },
+    fractions: {
+      title: 'Ugly Fractions',
+      desc: 'Simplify messy fractions like 22400 / 56. Integer or reduced.',
+      generate() {
+        // Build backwards: pick simplified answer, multiply by composite messy factor
+        const targetType = Math.random() < 0.6 ? 'int' : 'frac';
+        let sn, sd;
+        if (targetType === 'int') {
+          sn = rint(2, 40);
+          sd = 1;
+        } else {
+          // simplified fraction in lowest terms
+          do {
+            sn = rint(2, 12);
+            sd = rint(2, 12);
+          } while (gcd(sn, sd) !== 1 || sn === sd);
+        }
+        // Composite messy multiplier
+        const mults = [12, 14, 15, 16, 18, 21, 24, 28, 35, 36, 42, 45, 48, 56, 63, 72];
+        let k = pick(mults);
+        let num = sn * k;
+        let den = sd * k;
+        // Keep numbers reasonable
+        if (num > 50000 || den > 5000) {
+          k = pick([6, 8, 9, 12, 14, 15]);
+          num = sn * k;
+          den = sd * k;
+        }
+        const correctStr = fmtFraction(num, den);
+        return {
+          display: `${fmtNum(num)} / ${fmtNum(den)}`,
+          answer: correctStr,
+          check: (input) => {
+            const cleaned = input.replace(/\s+/g, '');
+            if (cleaned === correctStr) return true;
+            // Allow equivalent fractions
+            if (cleaned.includes('/')) {
+              const [pn, pd] = cleaned.split('/').map(x => parseInt(x, 10));
+              if (!pd || isNaN(pn) || isNaN(pd)) return false;
+              return pn * den === pd * num;
+            } else {
+              const v = parseInt(cleaned, 10);
+              if (isNaN(v)) return false;
+              return v * den === num;
+            }
+          },
+          exact: correctStr,
+          inputType: 'frac',
+        };
+      }
+    },
+    pct: {
+      title: 'Fractions to Percentages',
+      desc: 'Estimate fractions as percentages. Within \u00B11 percent counts.',
+      generate() {
+        let n, d;
+        // Generate a non-trivial fraction
+        do {
+          d = pick([6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19]);
+          n = rint(1, d - 1);
+        } while (gcd(n, d) === d);
+        const exact = (n / d) * 100;
+        const rounded = Math.round(exact * 10) / 10;
+        return {
+          display: `${n} / ${d}`,
+          subPrompt: 'as percentage',
+          answer: rounded,
+          check: (input) => {
+            const v = parseFloat(input);
+            if (isNaN(v)) return false;
+            return Math.abs(v - exact) <= 1;
+          },
+          exact: `${rounded}%`,
+          inputType: 'decimal',
+        };
+      }
+    },
+    bigmult: {
+      title: 'Large Number Multiplication',
+      desc: 'Two- and three-digit multiplications. Decompose, don\'t brute force.',
+      generate() {
+        // Bias toward numbers where tricks help: x25, x50, x125, x99, x101, etc.
+        const tricky = [25, 50, 99, 101, 75, 125, 250, 15, 45];
+        let a, b;
+        const r = Math.random();
+        if (r < 0.5) {
+          b = pick(tricky);
+          if (b >= 100) a = rint(12, 80);
+          else a = rint(12, 999);
+        } else if (r < 0.8) {
+          a = rint(11, 99);
+          b = rint(11, 99);
+        } else {
+          a = rint(100, 999);
+          b = rint(11, 99);
+        }
+        // Randomize order
+        if (Math.random() < 0.5) [a, b] = [b, a];
+        return {
+          display: `${fmtNum(a)} \u00D7 ${fmtNum(b)}`,
+          answer: a * b,
+          check: (input) => {
+            const v = parseInt(input.replace(/,/g, ''), 10);
+            return v === a * b;
+          },
+          exact: fmtNum(a * b),
+          inputType: 'int',
+        };
+      }
+    },
+    round: {
+      title: 'Rounding',
+      desc: 'Round to nearest 250, 500, or 1000. Target changes every question.',
+      generate() {
+        const target = pick([250, 500, 1000]);
+        // Generate a number that's clearly ambiguous
+        const magnitude = pick([1, 10, 100, 1000]);
+        let n;
+        if (target === 250) {
+          n = rint(500, 50000);
+        } else if (target === 500) {
+          n = rint(1000, 100000);
+        } else {
+          n = rint(2000, 200000);
+        }
+        const answer = Math.round(n / target) * target;
+        return {
+          display: fmtNum(n),
+          subPrompt: `round to nearest ${target}`,
+          answer: answer,
+          check: (input) => {
+            const v = parseInt(input.replace(/,/g, ''), 10);
+            return v === answer;
+          },
+          exact: fmtNum(answer),
+          inputType: 'int',
+        };
+      }
+    },
+  };
+
+  // ============ RENDERING ============
+  const app = document.getElementById('app');
+
+  function render() {
+    if (state.screen === 'home') renderHome();
+    else renderPlay();
+  }
+
+  function renderHome() {
+    state.score = 0;
+    state.streak = 0;
+    state.bestStreak = 0;
+    if (state.timerHandle) {
+      cancelAnimationFrame(state.timerHandle);
+      state.timerHandle = null;
+    }
+
+    const modeOrder = ['times', 'fractions', 'pct', 'bigmult', 'round'];
+    const modeButtons = modeOrder.map(key => {
+      const m = MODES[key];
+      return `<button class="mode-btn" data-mode="${key}">
+        <span class="title">${m.title}</span>
+        <span class="desc">${m.desc}</span>
+      </button>`;
+    }).join('');
+
+    const timerOpts = [5, 10, 20].map(t =>
+      `<button class="timer-opt ${state.timeLimit === t ? 'active' : ''}" data-time="${t}">${t}s</button>`
+    ).join('');
+
+    app.innerHTML = `
+      <div class="home">
+        <h1>Mental Math</h1>
+        <div class="sub">Pick a drill. Tap fast, think faster.</div>
+        ${modeButtons}
+        <div class="timer-row">
+          <div class="label">Time per question</div>
+          <div class="timer-options">${timerOpts}</div>
+        </div>
+      </div>
+    `;
+
+    app.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => startMode(btn.dataset.mode));
+    });
+    app.querySelectorAll('.timer-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.timeLimit = parseInt(btn.dataset.time, 10);
+        renderHome();
+      });
+    });
+  }
+
+  function startMode(modeKey) {
+    state.mode = modeKey;
+    state.screen = 'play';
+    state.score = 0;
+    state.streak = 0;
+    state.bestStreak = 0;
+    nextQuestion();
+  }
+
+  function nextQuestion() {
+    state.current = MODES[state.mode].generate();
+    state.input = '';
+    state.feedback = null;
+    state.locked = false;
+    state.timerStart = Date.now();
+    renderPlay();
+    startTimer();
+  }
+
+  function startTimer() {
+    if (state.timerHandle) cancelAnimationFrame(state.timerHandle);
+    const tick = () => {
+      const elapsed = (Date.now() - state.timerStart) / 1000;
+      const frac = Math.min(1, elapsed / state.timeLimit);
+      updateTimerBar(frac);
+      if (frac >= 1) {
+        if (!state.locked) {
+          submitAnswer(true);
+        }
+        return;
+      }
+      state.timerHandle = requestAnimationFrame(tick);
+    };
+    state.timerHandle = requestAnimationFrame(tick);
+  }
+
+  function updateTimerBar(frac) {
+    const bar = document.getElementById('timer-fill');
+    if (!bar) return;
+    bar.style.width = ((1 - frac) * 100) + '%';
+    bar.className = 'timer-fill';
+    if (frac > 0.75) bar.className += ' danger';
+    else if (frac > 0.5) bar.className += ' warning';
+  }
+
+  function renderPlay() {
+    const cur = state.current;
+    const inputType = cur.inputType;
+
+    let displayText = state.input || '';
+    let displayClass = 'answer-display';
+    if (state.feedback === 'correct') displayClass += ' correct';
+    else if (state.feedback === 'wrong') displayClass += ' wrong';
+
+    const subPromptHTML = cur.subPrompt
+      ? `<div class="small">${cur.subPrompt}</div>` : '';
+
+    let feedbackHTML = '';
+    if (state.feedback === 'correct') {
+      feedbackHTML = `<div class="feedback correct">Correct</div>`;
+    } else if (state.feedback === 'wrong') {
+      feedbackHTML = `<div class="feedback wrong">Answer: ${cur.exact}</div>`;
+    } else if (state.feedback === 'timeout') {
+      feedbackHTML = `<div class="feedback wrong">Time up. Answer: ${cur.exact}</div>`;
+    } else {
+      feedbackHTML = `<div class="feedback"></div>`;
+    }
+
+    // Build keypad
+    const keys = buildKeypadKeys(inputType);
+
+    app.innerHTML = `
+      <div class="play">
+        <div class="topbar">
+          <button class="home-btn" id="go-home" aria-label="Home">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12L12 4l9 8"/><path d="M5 10v10h14V10"/></svg>
+          </button>
+          <div class="stats">
+            <div class="stat"><span class="label">Score</span><span class="value score">${state.score}</span></div>
+            <div class="stat"><span class="label">Streak</span><span class="value streak">${state.streak}</span></div>
+            <div class="stat"><span class="label">Best</span><span class="value">${state.bestStreak}</span></div>
+          </div>
+        </div>
+        <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+        <div class="problem-area">
+          ${subPromptHTML}
+          <div class="problem">${cur.display}${cur.subPrompt ? '' : ' = ?'}</div>
+          <div class="${displayClass}">${displayText || '<span class="placeholder">_</span>'}</div>
+          ${feedbackHTML}
+        </div>
+        <div class="keypad">${keys}</div>
+      </div>
+    `;
+
+    document.getElementById('go-home').addEventListener('click', goHome);
+    app.querySelectorAll('.key').forEach(k => {
+      k.addEventListener('click', (e) => {
+        const v = e.currentTarget.dataset.k;
+        onKey(v);
+      });
+    });
+  }
+
+  function buildKeypadKeys(inputType) {
+    // Determine extra keys based on input type
+    let extraKey;
+    if (inputType === 'frac') extraKey = { label: '/', val: '/' };
+    else if (inputType === 'decimal') extraKey = { label: '.', val: '.' };
+    else extraKey = { label: '', val: null };
+
+    const layout = [
+      ['1','2','3'],
+      ['4','5','6'],
+      ['7','8','9'],
+    ];
+
+    let html = '';
+    for (const row of layout) {
+      for (const k of row) {
+        html += `<button class="key" data-k="${k}">${k}</button>`;
+      }
+    }
+    // Last row: extra | 0 | delete
+    const extraHTML = extraKey.val
+      ? `<button class="key" data-k="${extraKey.val}">${extraKey.label}</button>`
+      : `<button class="key disabled"></button>`;
+    html += extraHTML;
+    html += `<button class="key" data-k="0">0</button>`;
+    html += `<button class="key action" data-k="DEL" aria-label="Delete">DEL</button>`;
+    // Submit spans full width
+    html += `<button class="key submit" data-k="OK" style="grid-column: span 3">SUBMIT</button>`;
+    return html;
+  }
+
+  function onKey(k) {
+    if (state.locked) {
+      // Locked: allow any tap to advance to next question
+      nextQuestion();
+      return;
+    }
+    if (k === 'DEL') {
+      state.input = state.input.slice(0, -1);
+      updateInputOnly();
+      return;
+    }
+    if (k === 'OK') {
+      if (state.input.length === 0) return;
+      submitAnswer(false);
+      return;
+    }
+    // Numeric or fraction/decimal char
+    if (k === '/') {
+      if (state.input.includes('/') || state.input.length === 0) return;
+      state.input += '/';
+    } else if (k === '.') {
+      if (state.input.includes('.')) return;
+      if (state.input.length === 0) state.input = '0.';
+      else state.input += '.';
+    } else {
+      // digit
+      if (state.input.length >= 8) return;
+      state.input += k;
+    }
+    updateInputOnly();
+  }
+
+  function updateInputOnly() {
+    const disp = document.querySelector('.answer-display');
+    if (!disp) return;
+    if (state.input) {
+      disp.textContent = state.input;
+    } else {
+      disp.innerHTML = '<span class="placeholder">_</span>';
+    }
+  }
+
+  function submitAnswer(timedOut) {
+    if (state.locked) return;
+    state.locked = true;
+    if (state.timerHandle) {
+      cancelAnimationFrame(state.timerHandle);
+      state.timerHandle = null;
+    }
+
+    const cur = state.current;
+    let correct = false;
+    if (!timedOut && state.input.length > 0) {
+      correct = cur.check(state.input);
+    }
+
+    if (correct) {
+      state.score += 1;
+      state.streak += 1;
+      if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+      state.feedback = 'correct';
+    } else {
+      state.streak = 0;
+      state.feedback = timedOut ? 'timeout' : 'wrong';
+    }
+
+    renderPlay();
+    // Auto advance after a short delay
+    const delay = correct ? 600 : 1400;
+    setTimeout(() => {
+      if (state.screen === 'play' && state.locked) {
+        nextQuestion();
+      }
+    }, delay);
+  }
+
+  function goHome() {
+    if (state.timerHandle) {
+      cancelAnimationFrame(state.timerHandle);
+      state.timerHandle = null;
+    }
+    state.screen = 'home';
+    state.locked = false;
+    render();
+  }
+
+  // Prevent double-tap zoom & pull-to-refresh interference
+  document.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+  let lastTouch = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouch < 300) e.preventDefault();
+    lastTouch = now;
+  }, { passive: false });
+
+  // Kick off
+  render();
+})();
+</script>
+</body>
+</html>

@@ -290,6 +290,148 @@
     .home { padding: 16px; }
     .mode-btn { padding: 14px; margin-bottom: 8px; }
   }
+
+  /* MODE CARD with separate info button */
+  .mode-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    align-items: stretch;
+  }
+  .mode-row .mode-btn { margin-bottom: 0; flex: 1; }
+  .info-btn {
+    width: 52px;
+    background: #1a1a1a;
+    border: 1px solid #262626;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: #888;
+    touch-action: manipulation;
+  }
+  .info-btn:active { background: #242424; color: #f5f5f5; }
+  .play-info-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #888;
+    touch-action: manipulation;
+  }
+  .play-info-btn:active { background: #262626; color: #f5f5f5; }
+
+  /* TIPS SCREEN */
+  .tips {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .tips-bar {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 12px;
+    border-bottom: 1px solid #1a1a1a;
+  }
+  .tips-bar .back {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    touch-action: manipulation;
+  }
+  .tips-bar .back:active { background: #262626; }
+  .tips-bar .back svg { width: 20px; height: 20px; stroke: #f5f5f5; }
+  .tips-bar .title-text {
+    font-size: 17px;
+    font-weight: 600;
+    flex: 1;
+    text-align: center;
+    padding-right: 40px;
+  }
+  .tips-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 20px 40px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tips-content h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+  }
+  .tips-content .intro {
+    color: #888;
+    font-size: 15px;
+    line-height: 1.45;
+    margin-bottom: 22px;
+  }
+  .tips-content h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #93c5fd;
+    margin: 22px 0 8px;
+    letter-spacing: 0.2px;
+  }
+  .tips-content p {
+    font-size: 15px;
+    line-height: 1.55;
+    color: #d4d4d4;
+    margin-bottom: 10px;
+  }
+  .tips-content .example {
+    background: #111;
+    border-left: 3px solid #2563eb;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #d4d4d4;
+    margin: 8px 0 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .tips-content .example .calc {
+    font-family: -apple-system-mono, "SF Mono", Menlo, monospace;
+    color: #6ee7b7;
+    display: block;
+    margin-top: 4px;
+    font-size: 14px;
+  }
+  .tips-content ul {
+    margin: 0 0 14px 0;
+    padding-left: 20px;
+  }
+  .tips-content li {
+    font-size: 15px;
+    line-height: 1.55;
+    color: #d4d4d4;
+    margin-bottom: 6px;
+  }
+  .tips-content strong { color: #f5f5f5; font-weight: 600; }
+  .tips-content code {
+    background: #1a1a1a;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: -apple-system-mono, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    color: #fbbf24;
+  }
 </style>
 </head>
 <body>
@@ -340,11 +482,14 @@
   // ============ MODES ============
   const MODES = {
     times: {
-      title: 'Times Tables (Hard Pairs)',
-      desc: 'Combinations of 6, 7, 8, 9. The ones that actually slow you down.',
+      title: 'Times Tables (Trio)',
+      desc: 'Just the three hardest pairs: 6\u00D77, 6\u00D78, 7\u00D78.',
       generate() {
-        const a = pick([6,7,8,9]);
-        const b = pick([6,7,8,9]);
+        const pairs = [[6,7],[6,8],[7,8]];
+        const [x, y] = pick(pairs);
+        // Randomize order so it doesn't feel rote
+        const a = Math.random() < 0.5 ? x : y;
+        const b = a === x ? y : x;
         return {
           display: `${a} \u00D7 ${b}`,
           answer: a * b,
@@ -356,31 +501,35 @@
     },
     fractions: {
       title: 'Ugly Fractions',
-      desc: 'Simplify messy fractions like 22400 / 56. Integer or reduced.',
+      desc: 'Simplify messy fractions like 192 / 24. Integer or reduced.',
       generate() {
-        // Build backwards: pick simplified answer, multiply by composite messy factor
-        const targetType = Math.random() < 0.6 ? 'int' : 'frac';
-        let sn, sd;
-        if (targetType === 'int') {
-          sn = rint(2, 40);
-          sd = 1;
-        } else {
-          // simplified fraction in lowest terms
-          do {
-            sn = rint(2, 12);
-            sd = rint(2, 12);
-          } while (gcd(sn, sd) !== 1 || sn === sd);
-        }
-        // Composite messy multiplier
-        const mults = [12, 14, 15, 16, 18, 21, 24, 28, 35, 36, 42, 45, 48, 56, 63, 72];
-        let k = pick(mults);
-        let num = sn * k;
-        let den = sd * k;
-        // Keep numbers reasonable
-        if (num > 50000 || den > 5000) {
-          k = pick([6, 8, 9, 12, 14, 15]);
+        // Goldilocks generator: numerators look ugly (>= 30) but the
+        // structure is always one or two cancellations from times-table
+        // factors. No paper required.
+        let sn, sd, k, num, den;
+        for (let attempt = 0; attempt < 20; attempt++) {
+          const r = Math.random();
+          if (r < 0.55) {
+            // Integer answer
+            sn = rint(2, 15);
+            sd = 1;
+          } else {
+            // Small simplified fraction with recognizable terms
+            const fracs = [[1,2],[1,3],[2,3],[1,4],[3,4],[2,5],[3,5],[4,5],
+                           [1,6],[5,6],[3,8],[5,8],[7,8],[2,7],[3,7],[2,9],[4,9],[5,9]];
+            [sn, sd] = pick(fracs);
+          }
+          // Multipliers: each factors into pieces from the small times tables
+          // (6=2x3, 8=2x4, 9=3x3, 12=3x4, 14=2x7, 15=3x5, 16=2x8, 18=2x9, 20=4x5, 24=3x8)
+          const mults = [6, 8, 9, 12, 14, 15, 16, 18, 20, 24];
+          k = pick(mults);
           num = sn * k;
           den = sd * k;
+          // Skip the boring ones: numerator too small to look like a real problem
+          if (num < 30) continue;
+          // Skip ones that are too obviously trivial
+          if (num < 50 && den < 12) continue;
+          break;
         }
         const correctStr = fmtFraction(num, den);
         return {
@@ -389,7 +538,6 @@
           check: (input) => {
             const cleaned = input.replace(/\s+/g, '');
             if (cleaned === correctStr) return true;
-            // Allow equivalent fractions
             if (cleaned.includes('/')) {
               const [pn, pd] = cleaned.split('/').map(x => parseInt(x, 10));
               if (!pd || isNaN(pn) || isNaN(pd)) return false;
@@ -406,92 +554,216 @@
       }
     },
     pct: {
-      title: 'Fractions to Percentages',
-      desc: 'Estimate fractions as percentages. Within \u00B11 percent counts.',
+      title: 'Fractions to Decimals',
+      desc: 'Convert fractions like 5/8 to decimals. Within \u00B10.01 counts.',
       generate() {
         let n, d;
-        // Generate a non-trivial fraction
         do {
           d = pick([6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19]);
           n = rint(1, d - 1);
         } while (gcd(n, d) === d);
-        const exact = (n / d) * 100;
-        const rounded = Math.round(exact * 10) / 10;
+        const exact = n / d;
+        // Round display to 4 decimals so it's readable
+        const rounded = Math.round(exact * 10000) / 10000;
         return {
           display: `${n} / ${d}`,
-          subPrompt: 'as percentage',
+          subPrompt: 'as decimal',
           answer: rounded,
           check: (input) => {
             const v = parseFloat(input);
             if (isNaN(v)) return false;
-            return Math.abs(v - exact) <= 1;
+            return Math.abs(v - exact) <= 0.01;
           },
-          exact: `${rounded}%`,
+          exact: String(rounded),
           inputType: 'decimal',
         };
       }
     },
     bigmult: {
-      title: 'Large Number Multiplication',
-      desc: 'Two- and three-digit multiplications. Decompose, don\'t brute force.',
+      title: 'Powers of Ten',
+      desc: 'Track the zeros. 100 \u00D7 1000, 300 \u00D7 4000, and so on.',
       generate() {
-        // Bias toward numbers where tricks help: x25, x50, x125, x99, x101, etc.
-        const tricky = [25, 50, 99, 101, 75, 125, 250, 15, 45];
-        let a, b;
-        const r = Math.random();
-        if (r < 0.5) {
-          b = pick(tricky);
-          if (b >= 100) a = rint(12, 80);
-          else a = rint(12, 999);
-        } else if (r < 0.8) {
-          a = rint(11, 99);
-          b = rint(11, 99);
+        // Two flavors:
+        //  - pure: 10^a * 10^b, e.g. 100 x 1000
+        //  - scaled: (d * 10^a) * (e * 10^b), e.g. 300 x 4000, with small leading digits
+        const pure = Math.random() < 0.4;
+        let a, b, da, db, valA, valB;
+        if (pure) {
+          // Pure powers of 10
+          a = rint(1, 5);
+          b = rint(1, 5);
+          // Avoid trivial 10 x 10
+          if (a === 1 && b === 1) a = 2;
+          da = 1; db = 1;
+          valA = Math.pow(10, a);
+          valB = Math.pow(10, b);
         } else {
-          a = rint(100, 999);
-          b = rint(11, 99);
+          // Leading digit + zeros
+          a = rint(1, 4);
+          b = rint(1, 4);
+          da = rint(2, 9);
+          db = rint(2, 9);
+          valA = da * Math.pow(10, a);
+          valB = db * Math.pow(10, b);
         }
         // Randomize order
-        if (Math.random() < 0.5) [a, b] = [b, a];
+        if (Math.random() < 0.5) { [valA, valB] = [valB, valA]; }
+        const answer = valA * valB;
         return {
-          display: `${fmtNum(a)} \u00D7 ${fmtNum(b)}`,
-          answer: a * b,
-          check: (input) => {
-            const v = parseInt(input.replace(/,/g, ''), 10);
-            return v === a * b;
-          },
-          exact: fmtNum(a * b),
-          inputType: 'int',
-        };
-      }
-    },
-    round: {
-      title: 'Rounding',
-      desc: 'Round to nearest 250, 500, or 1000. Target changes every question.',
-      generate() {
-        const target = pick([250, 500, 1000]);
-        // Generate a number that's clearly ambiguous
-        const magnitude = pick([1, 10, 100, 1000]);
-        let n;
-        if (target === 250) {
-          n = rint(500, 50000);
-        } else if (target === 500) {
-          n = rint(1000, 100000);
-        } else {
-          n = rint(2000, 200000);
-        }
-        const answer = Math.round(n / target) * target;
-        return {
-          display: fmtNum(n),
-          subPrompt: `round to nearest ${target}`,
+          display: `${fmtNum(valA)} \u00D7 ${fmtNum(valB)}`,
           answer: answer,
           check: (input) => {
-            const v = parseInt(input.replace(/,/g, ''), 10);
+            const v = parseInt(input.replace(/[,\s]/g, ''), 10);
             return v === answer;
           },
           exact: fmtNum(answer),
           inputType: 'int',
         };
       }
+    },
+    mixed: {
+      title: 'Mixed',
+      desc: 'All drills shuffled together. Best test of real recall.',
+      generate() {
+        const pool = ['times', 'fractions', 'pct', 'bigmult'];
+        const choice = pick(pool);
+        return MODES[choice].generate();
+      }
+    },
+  };
+
+  // ============ TIPS CONTENT ============
+  const TIPS = {
+    times: {
+      title: 'Times Tables (Trio)',
+      intro: 'Just three pairs: 6\u00D77, 6\u00D78, 7\u00D78. These are the products that most consistently trip people up. The goal here is pure recall speed, not derivation.',
+      sections: [
+        {
+          h: 'The three answers',
+          body: '<ul><li><strong>6 \u00D7 7 = 42</strong></li><li><strong>6 \u00D7 8 = 48</strong></li><li><strong>7 \u00D7 8 = 56</strong></li></ul>'
+        },
+        {
+          h: 'Mnemonic anchors',
+          body: '<ul><li><strong>7 \u00D7 8 = 56</strong>: digits 5, 6, 7, 8 in order. The famous one.</li><li><strong>6 \u00D7 8 = 48</strong>: rhymes ("six times eight is forty-eight").</li><li><strong>6 \u00D7 7 = 42</strong>: think "the answer to life, the universe, and everything".</li></ul>'
+        },
+        {
+          h: 'Decompose when stuck',
+          body: '<p>If recall fails, break into easier pieces. Always cross-check with this.</p>',
+          example: '7 \u00D7 8 = 7 \u00D7 (10 - 2) = 70 - 14 <span class="calc">= 56</span>\n6 \u00D7 7 = 6 \u00D7 (5 + 2) = 30 + 12 <span class="calc">= 42</span>'
+        },
+        {
+          h: 'Why only these three',
+          body: '<p>Multiplications by 1, 2, 5, 10 are trivial. By 3 or 4 you can double from earlier results. By 9 the digit-sum trick works. The slow products are the ones in the middle: where neither side rounds nicely and there is no shortcut, only memory.</p>'
+        }
+      ]
+    },
+
+    fractions: {
+      title: 'Ugly Fractions',
+      intro: 'These are built by taking a small simplified answer (like 7, or 3/8) and multiplying both top and bottom by a number from the small times tables (6, 8, 9, 12, 14, 15, 16, 18, 20, 24). Your job is to undo that. Everything here is doable in your head with one or two cancellation steps.',
+      sections: [
+        {
+          h: 'Divisibility quick checks',
+          body: '<ul><li><strong>By 2:</strong> last digit even.</li><li><strong>By 3:</strong> sum of digits divisible by 3.</li><li><strong>By 4:</strong> last two digits form a multiple of 4.</li><li><strong>By 5:</strong> ends in 0 or 5.</li><li><strong>By 9:</strong> digit sum divisible by 9.</li></ul>'
+        },
+        {
+          h: 'Factor the denominator first',
+          body: '<p>Always start here. The denominator is small (single or low double digits) and tells you what factors to look for in the numerator.</p><ul><li>12 = 4 \u00D7 3</li><li>14 = 2 \u00D7 7</li><li>15 = 3 \u00D7 5</li><li>16 = 2 \u00D7 8</li><li>18 = 2 \u00D7 9</li><li>20 = 4 \u00D7 5</li><li>24 = 3 \u00D7 8</li></ul>'
+        },
+        {
+          h: 'Cancel in stages',
+          body: '<p>Do not search for the full GCD. Spot one easy common factor, divide both sides, look again.</p>',
+          example: '120 / 192\nBoth divisible by 8: 15 / 24\nBoth divisible by 3: 5 / 8 <span class="calc">Answer: 5/8</span>'
+        },
+        {
+          h: 'Recognize times-table products',
+          body: '<p>When the answer is an integer, the numerator is denominator \u00D7 answer. So <code>192 / 24</code>: ask "what times 24 equals 192?" 24 \u00D7 8 = 192, done.</p>',
+          example: '126 / 14\n14 \u00D7 9 = 126 <span class="calc">Answer: 9</span>'
+        },
+        {
+          h: 'Sanity-check with size',
+          body: '<p>Before computing, estimate. <code>120 / 15</code> is around <code>120 / 15 \u2248 8</code>. The exact answer is 8. If you got 80 or 0.8 something went wrong with a zero.</p>'
+        }
+      ]
+    },
+
+    pct: {
+      title: 'Fractions to Decimals',
+      intro: 'The drill accepts answers within \u00B10.01, so estimates are fine. Build from anchor decimals you know by heart, refine if needed.',
+      sections: [
+        {
+          h: 'Anchor decimals to memorize',
+          body: '<ul><li>1/2 = 0.5</li><li>1/3 \u2248 0.333, 2/3 \u2248 0.667</li><li>1/4 = 0.25, 3/4 = 0.75</li><li>1/5 = 0.2, 2/5 = 0.4, ...</li><li>1/6 \u2248 0.167, 5/6 \u2248 0.833</li><li>1/7 \u2248 0.143 (the rest cycle: 0.286, 0.429, 0.571, 0.714, 0.857)</li><li>1/8 = 0.125, 3/8 = 0.375, 5/8 = 0.625, 7/8 = 0.875</li><li>1/9 \u2248 0.111 (n/9 is just 0.nnn...)</li><li>1/11 \u2248 0.091</li><li>1/12 \u2248 0.083</li></ul>'
+        },
+        {
+          h: 'Build from anchors',
+          body: '<p>Once you know unit fractions, just multiply.</p>',
+          example: '5/8 = 5 \u00D7 0.125 <span class="calc">= 0.625</span>\n4/9 = 4 \u00D7 0.111... <span class="calc">\u2248 0.444</span>'
+        },
+        {
+          h: 'Use neighbors for ugly denominators',
+          body: '<p>For something like 7/13, find a nearby easy fraction.</p>',
+          example: '7/13 is just above 7/14 = 1/2 = 0.5. <span class="calc">Estimate \u2248 0.54</span>'
+        },
+        {
+          h: 'Divide directly when easy',
+          body: '<p>Sometimes long division in your head is the cleanest path, especially for small numerators.</p>',
+          example: '3/8: 3.000 / 8 = 0.375 <span class="calc">= 0.375</span>'
+        },
+        {
+          h: 'Why decimals not percentages',
+          body: '<p>Decimals are how these values appear in formulas and intermediate calculations. Multiplying a number by 0.625 is more natural than multiplying it by 62.5%, even though they are the same operation. Train the form you actually use.</p>'
+        }
+      ]
+    },
+
+    bigmult: {
+      title: 'Powers of Ten',
+      intro: 'The whole skill is counting zeros. Multiplying any two numbers ending in zeros decomposes into: (leading digits product) followed by (total count of trailing zeros). Build that automatic reflex so you never second-guess an order of magnitude in your work.',
+      sections: [
+        {
+          h: 'The core rule',
+          body: '<p><code>10\u1d43 \u00D7 10\u1d47 = 10\u1d43\u207a\u1d47</code>. Just add the exponents.</p>',
+          example: '100 \u00D7 1000 = 10\u00B2 \u00D7 10\u00B3 = 10\u2075 <span class="calc">= 100,000</span>\n10 \u00D7 100,000 = 10\u00B9 \u00D7 10\u2075 = 10\u2076 <span class="calc">= 1,000,000</span>'
+        },
+        {
+          h: 'With leading digits',
+          body: '<p>Multiply the leading digits, then append all the trailing zeros from both numbers.</p>',
+          example: '300 \u00D7 4000\nLeading: 3 \u00D7 4 = 12\nZeros: 2 + 3 = 5 trailing zeros\n<span class="calc">= 1,200,000</span>'
+        },
+        {
+          h: 'Watch for the carry',
+          body: '<p>If the leading-digit product itself ends in a zero, you gain an extra zero. Do not lose it.</p>',
+          example: '500 \u00D7 2000\nLeading: 5 \u00D7 2 = 10 (one extra zero already)\nZeros from input: 2 + 3 = 5\nTotal: 5 + 1 = 6 zeros, leading "1"\n<span class="calc">= 1,000,000</span>'
+        },
+        {
+          h: 'Anchor magnitudes',
+          body: '<p>Have these in instant recall, named:</p><ul><li>10\u00B3 = thousand</li><li>10\u2076 = million</li><li>10\u2079 = billion</li><li>10\u00B9\u00B2 = trillion</li></ul><p>So <code>10\u00B3 \u00D7 10\u00B3 = million</code>, <code>10\u00B3 \u00D7 10\u2076 = billion</code>, <code>10\u2076 \u00D7 10\u2076 = trillion</code>. Recognize these instantly.</p>'
+        },
+        {
+          h: 'For sanity checks',
+          body: '<p>When you compute something and want to verify the order of magnitude, replace every number with its leading-digit-and-power form. <code>340 \u00D7 27,000</code> becomes roughly <code>3 \u00D7 10\u00B2 \u00D7 3 \u00D7 10\u2074 = 9 \u00D7 10\u2076</code>, so the answer should be around 9 million. If you got 90 thousand or 90 million, something is wrong.</p>'
+        }
+      ]
+    },
+
+    mixed: {
+      title: 'Mixed',
+      intro: 'All four drills shuffled together. Each question is randomly drawn from times tables, ugly fractions, fractions to decimals, or powers of ten.',
+      sections: [
+        {
+          h: 'Why mix',
+          body: '<p>Real situations do not announce which technique is needed. A study problem might require simplifying a fraction, then estimating a percentage, then sanity-checking the magnitude. Mixed practice trains the recognition step (which drill is this?), not just the execution step.</p>'
+        },
+        {
+          h: 'Read individual mode tips',
+          body: '<p>Each mode has its own tips page. Go back to the home screen and tap the ? next to each mode for techniques specific to that type of problem.</p>'
+        },
+        {
+          h: 'Keypad adapts per question',
+          body: '<p>When a fraction question comes up, the / key appears. For a decimal question, the . key appears. For integer answers, only digits. The keypad layout shifts to match what the current question needs.</p>'
+        }
+      ]
     },
   };
 
@@ -500,6 +772,7 @@
 
   function render() {
     if (state.screen === 'home') renderHome();
+    else if (state.screen === 'tips') renderTips();
     else renderPlay();
   }
 
@@ -512,13 +785,16 @@
       state.timerHandle = null;
     }
 
-    const modeOrder = ['times', 'fractions', 'pct', 'bigmult', 'round'];
+    const modeOrder = ['times', 'fractions', 'pct', 'bigmult', 'mixed'];
     const modeButtons = modeOrder.map(key => {
       const m = MODES[key];
-      return `<button class="mode-btn" data-mode="${key}">
-        <span class="title">${m.title}</span>
-        <span class="desc">${m.desc}</span>
-      </button>`;
+      return `<div class="mode-row">
+        <button class="mode-btn" data-mode="${key}">
+          <span class="title">${m.title}</span>
+          <span class="desc">${m.desc}</span>
+        </button>
+        <button class="info-btn" data-tips="${key}" aria-label="How to do ${m.title}">?</button>
+      </div>`;
     }).join('');
 
     const timerOpts = [5, 10, 20].map(t =>
@@ -528,7 +804,7 @@
     app.innerHTML = `
       <div class="home">
         <h1>Mental Math</h1>
-        <div class="sub">Pick a drill. Tap fast, think faster.</div>
+        <div class="sub">Pick a drill. Tap the ? for tips on each mode.</div>
         ${modeButtons}
         <div class="timer-row">
           <div class="label">Time per question</div>
@@ -540,6 +816,12 @@
     app.querySelectorAll('.mode-btn').forEach(btn => {
       btn.addEventListener('click', () => startMode(btn.dataset.mode));
     });
+    app.querySelectorAll('.info-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showTips(btn.dataset.tips, 'home');
+      });
+    });
     app.querySelectorAll('.timer-opt').forEach(btn => {
       btn.addEventListener('click', () => {
         state.timeLimit = parseInt(btn.dataset.time, 10);
@@ -547,6 +829,57 @@
       });
     });
   }
+
+  function showTips(modeKey, returnTo) {
+    state.tipsMode = modeKey;
+    state.tipsReturnTo = returnTo;
+    if (state.timerHandle) {
+      cancelAnimationFrame(state.timerHandle);
+      state.timerHandle = null;
+    }
+    state.screen = 'tips';
+    renderTips();
+  }
+
+  function renderTips() {
+    const t = TIPS[state.tipsMode];
+    if (!t) { state.screen = 'home'; renderHome(); return; }
+
+    const sectionsHTML = t.sections.map(s => {
+      let html = `<h3>${s.h}</h3>${s.body}`;
+      if (s.example) {
+        html += `<div class="example">${s.example.replace(/\n/g, '<br>')}</div>`;
+      }
+      return html;
+    }).join('');
+
+    app.innerHTML = `
+      <div class="tips">
+        <div class="tips-bar">
+          <button class="back" id="tips-back" aria-label="Back">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="title-text">How to</div>
+        </div>
+        <div class="tips-content">
+          <h2>${t.title}</h2>
+          <div class="intro">${t.intro}</div>
+          ${sectionsHTML}
+        </div>
+      </div>
+    `;
+
+    document.getElementById('tips-back').addEventListener('click', () => {
+      if (state.tipsReturnTo === 'play' && state.mode === state.tipsMode) {
+        state.screen = 'play';
+        nextQuestion();
+      } else {
+        state.screen = 'home';
+        renderHome();
+      }
+    });
+  }
+
 
   function startMode(modeKey) {
     state.mode = modeKey;
@@ -630,6 +963,7 @@
             <div class="stat"><span class="label">Streak</span><span class="value streak">${state.streak}</span></div>
             <div class="stat"><span class="label">Best</span><span class="value">${state.bestStreak}</span></div>
           </div>
+          <button class="play-info-btn" id="play-tips" aria-label="Tips">?</button>
         </div>
         <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
         <div class="problem-area">
@@ -643,6 +977,9 @@
     `;
 
     document.getElementById('go-home').addEventListener('click', goHome);
+    document.getElementById('play-tips').addEventListener('click', () => {
+      showTips(state.mode, 'play');
+    });
     app.querySelectorAll('.key').forEach(k => {
       // Use touchstart for instant response on mobile, click as fallback for desktop.
       // Track per-key fired state to prevent double-firing from the synthesized click.
